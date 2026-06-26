@@ -25,7 +25,7 @@ class HealthControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("OK"))
                 .andExpect(jsonPath("$.data.name").value("RepoHealth-Lite Plus"))
-                .andExpect(jsonPath("$.data.version").value("0.1.0"))
+                .andExpect(jsonPath("$.data.version").value("1.0.0"))
                 .andExpect(jsonPath("$.data.status").value("UP"));
     }
 }

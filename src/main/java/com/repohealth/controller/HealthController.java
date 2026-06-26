@@ -13,7 +13,7 @@ public class HealthController {
     public ApiResponse<Map<String, Object>> health() {
         Map<String, Object> data = Map.of(
                 "name", "RepoHealth-Lite Plus",
-                "version", "0.1.0",
+                "version", "1.0.0",
                 "status", "UP"
         );
         return ApiResponse.ok(data);

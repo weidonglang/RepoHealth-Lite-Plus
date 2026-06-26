@@ -33,7 +33,7 @@ curl http://localhost:8080/api/health
   "message": "OK",
   "data": {
     "name": "RepoHealth-Lite Plus",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "status": "UP"
   }
 }
