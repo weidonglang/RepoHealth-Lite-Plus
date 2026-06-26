@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RepoHealth-Lite Plus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>RepoHealth-Lite Plus</h1>
+        <p class="subtitle">GitHub 作品集体检与语言构成分析工具</p>
+    </header>
+
+    <main>
+        <section class="input-section">
+            <div class="input-group">
+                <input type="text" id="username-input" placeholder="输入 GitHub 用户名" autocomplete="off">
+                <button id="analyze-btn" onclick="startAnalysis()">开始分析</button>
+                <button id="demo-btn" onclick="loadDemoData()" class="btn-secondary">加载示例数据</button>
+            </div>
+            <div id="error-message" class="error-message" style="display:none;"></div>
+            <div id="loading" class="loading" style="display:none;">
+                <div class="spinner"></div>
+                <span>正在分析中，请稍候...</span>
+            </div>
+        </section>
+
+        <section id="result-section" class="result-section" style="display:none;">
+            <nav class="tabs">
+                <button class="tab active" onclick="switchTab('overview')" data-tab="overview">总览</button>
+                <button class="tab" onclick="switchTab('languages')" data-tab="languages">语言构成</button>
+                <button class="tab" onclick="switchTab('health')" data-tab="health">仓库体检</button>
+                <button class="tab" onclick="switchTab('techstack')" data-tab="techstack">技术栈</button>
+                <button class="tab" onclick="switchTab('portfolio')" data-tab="portfolio">简历推荐</button>
+                <button class="tab" onclick="switchTab('report')" data-tab="report">报告预览</button>
+            </nav>
+
+            <div id="overview-tab" class="tab-content active">
+                <h2>总览</h2>
+                <div id="overview-content" class="overview-grid"></div>
+            </div>
+
+            <div id="languages-tab" class="tab-content">
+                <h2>语言构成</h2>
+                <div id="languages-content"></div>
+            </div>
+
+            <div id="health-tab" class="tab-content">
+                <h2>仓库体检</h2>
+                <div class="filter-bar">
+                    <button class="filter-btn active" onclick="filterHealth('all')" data-filter="all">全部</button>
+                    <button class="filter-btn" onclick="filterHealth('excellent')" data-filter="excellent">优秀</button>
+                    <button class="filter-btn" onclick="filterHealth('good')" data-filter="good">良好</button>
+                    <button class="filter-btn" onclick="filterHealth('needs')" data-filter="needs">需要整理</button>
+                    <button class="filter-btn" onclick="filterHealth('archive')" data-filter="archive">建议归档</button>
+                </div>
+                <div id="health-content"></div>
+            </div>
+
+            <div id="techstack-tab" class="tab-content">
+                <h2>技术栈</h2>
+                <div id="techstack-content"></div>
+            </div>
+
+            <div id="portfolio-tab" class="tab-content">
+                <h2>简历推荐</h2>
+                <div id="portfolio-content"></div>
+            </div>
+
+            <div id="report-tab" class="tab-content">
+                <h2>报告预览</h2>
+                <div class="report-actions">
+                    <button onclick="copyReport()" class="btn-secondary">复制报告</button>
+                    <button onclick="downloadReport()" class="btn-secondary">下载 Markdown</button>
+                </div>
+                <pre id="report-content" class="report-preview"></pre>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>RepoHealth-Lite Plus v0.1.0 | 基于 Spring Boot 的 GitHub 作品集体检工具</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
