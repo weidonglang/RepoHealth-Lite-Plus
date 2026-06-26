@@ -1,0 +1,14 @@
+# ============================================
+# Demo Profile: Demonstration / offline mode
+# ============================================
+
+logging:
+  level:
+    com.repohealth: INFO
+
+repohealth:
+  data-dir: ${REPOHEALTH_DATA_DIR:./data/demo}
+  log-dir: ${REPOHEALTH_LOG_DIR:${repohealth.data-dir}/logs}
+
+  github:
+    token: ""

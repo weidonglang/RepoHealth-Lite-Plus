@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   application:
@@ -10,3 +10,17 @@ spring:
     serialization:
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
+
+repohealth:
+  github:
+    token: ${GITHUB_TOKEN:}
+    api-base-url: https://api.github.com
+    request-timeout-seconds: 10
+
+  cache:
+    ttl-minutes: ${REPOHEALTH_CACHE_TTL_MINUTES:10}
+
+  data-dir: ${REPOHEALTH_DATA_DIR:./data}
+  snapshot-dir: ${REPOHEALTH_SNAPSHOT_DIR:${repohealth.data-dir}/snapshots}
+  report-dir: ${REPOHEALTH_REPORT_DIR:${repohealth.data-dir}/reports}
+  log-dir: ${REPOHEALTH_LOG_DIR:${repohealth.data-dir}/logs}

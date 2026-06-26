@@ -3,12 +3,16 @@ package com.repohealth.github;
 import com.repohealth.model.RepositoryInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,24 +25,32 @@ import static org.mockito.Mockito.when;
 public class GitHubClientTest {
 
     private RestTemplate restTemplate;
+    private GitHubProperties gitHubProperties;
     private GitHubClient gitHubClient;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() {
         restTemplate = mock(RestTemplate.class);
-        gitHubClient = new GitHubClient(restTemplate);
+        gitHubProperties = new GitHubProperties();
+        gitHubProperties.setToken("");
+        gitHubClient = new GitHubClient(restTemplate, gitHubProperties);
     }
 
     // ---- Task 3: getUserRepositories ----
 
     @Test
+    @SuppressWarnings("unchecked")
     void testGetUserRepositories_ShouldReturnRepos() {
         GitHubRepositoryDto[] mockRepos = new GitHubRepositoryDto[2];
         mockRepos[0] = createMockDto("repo1", "testuser/repo1", "testuser", "First repo", 10, 3, 5, 1000, "Java");
         mockRepos[1] = createMockDto("repo2", "testuser/repo2", "testuser", "Second repo", 5, 1, 2, 500, "Python");
 
-        String url = "https://api.github.com/users/testuser/repos?per_page=100&page=1";
-        when(restTemplate.getForObject(url, GitHubRepositoryDto[].class)).thenReturn(mockRepos);
+        ResponseEntity<GitHubRepositoryDto[]> response = ResponseEntity.ok(mockRepos);
+        ResponseEntity<GitHubRepositoryDto[]> emptyResponse = ResponseEntity.ok(new GitHubRepositoryDto[0]);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(GitHubRepositoryDto[].class)))
+                .thenReturn(response)
+                .thenReturn(emptyResponse);
 
         List<RepositoryInfo> repos = gitHubClient.getUserRepositories("testuser");
 
@@ -52,9 +64,9 @@ public class GitHubClientTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testGetUserRepositories_WhenUserNotFound_ShouldThrow() {
-        String url = "https://api.github.com/users/nonexistent/repos?per_page=100&page=1";
-        when(restTemplate.getForObject(url, GitHubRepositoryDto[].class))
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(GitHubRepositoryDto[].class)))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
         GitHubApiException exception = assertThrows(GitHubApiException.class, () -> {
@@ -65,9 +77,9 @@ public class GitHubClientTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testGetUserRepositories_WhenRateLimited_ShouldThrow() {
-        String url = "https://api.github.com/users/testuser/repos?per_page=100&page=1";
-        when(restTemplate.getForObject(url, GitHubRepositoryDto[].class))
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(GitHubRepositoryDto[].class)))
                 .thenThrow(new HttpClientErrorException(HttpStatus.FORBIDDEN));
 
         GitHubApiException exception = assertThrows(GitHubApiException.class, () -> {
@@ -80,6 +92,7 @@ public class GitHubClientTest {
     // ---- Task 4: getReadmeContent ----
 
     @Test
+    @SuppressWarnings("unchecked")
     void testGetReadmeContent_ShouldReturnDecodedContent() {
         String content = "# README\nThis is a test readme.";
         String encoded = Base64.getEncoder().encodeToString(content.getBytes(StandardCharsets.UTF_8));
@@ -90,8 +103,9 @@ public class GitHubClientTest {
         dto.setContent(encoded);
         dto.setEncoding("base64");
 
-        String url1 = "https://api.github.com/repos/testuser/repo1/contents/README.md";
-        when(restTemplate.getForObject(url1, GitHubClient.GitHubContentDto.class)).thenReturn(dto);
+        ResponseEntity<GitHubClient.GitHubContentDto> response = ResponseEntity.ok(dto);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(GitHubClient.GitHubContentDto.class)))
+                .thenReturn(response);
 
         Optional<String> result = gitHubClient.getReadmeContent("testuser", "repo1");
 
@@ -100,21 +114,9 @@ public class GitHubClientTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testGetReadmeContent_WhenNotFound_ShouldReturnEmpty() {
-        String url1 = "https://api.github.com/repos/testuser/repo1/contents/README.md";
-        when(restTemplate.getForObject(url1, GitHubClient.GitHubContentDto.class))
-                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
-
-        String url2 = "https://api.github.com/repos/testuser/repo1/contents/README.MD";
-        when(restTemplate.getForObject(url2, GitHubClient.GitHubContentDto.class))
-                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
-
-        String url3 = "https://api.github.com/repos/testuser/repo1/contents/readme.md";
-        when(restTemplate.getForObject(url3, GitHubClient.GitHubContentDto.class))
-                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
-
-        String url4 = "https://api.github.com/repos/testuser/repo1/contents/README";
-        when(restTemplate.getForObject(url4, GitHubClient.GitHubContentDto.class))
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(GitHubClient.GitHubContentDto.class)))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
         Optional<String> result = gitHubClient.getReadmeContent("testuser", "repo1");
@@ -123,13 +125,9 @@ public class GitHubClientTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testGetReadmeContent_ShouldTryNextPathIfNotFound() {
-        // README.md 不存在
-        String url1 = "https://api.github.com/repos/testuser/repo1/contents/README.md";
-        when(restTemplate.getForObject(url1, GitHubClient.GitHubContentDto.class))
-                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
-
-        // readme.md 存在
+        // All attempts return 404 except the second one succeeds
         String content = "# Readme via readme.md";
         String encoded = Base64.getEncoder().encodeToString(content.getBytes(StandardCharsets.UTF_8));
         GitHubClient.GitHubContentDto dto = new GitHubClient.GitHubContentDto();
@@ -138,8 +136,12 @@ public class GitHubClientTest {
         dto.setContent(encoded);
         dto.setEncoding("base64");
 
-        String url3 = "https://api.github.com/repos/testuser/repo1/contents/readme.md";
-        when(restTemplate.getForObject(url3, GitHubClient.GitHubContentDto.class)).thenReturn(dto);
+        // Use a counter to alternate behavior: first 3 calls throw, 4th returns the dto
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(GitHubClient.GitHubContentDto.class)))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND))
+                .thenReturn(ResponseEntity.ok(dto));
 
         Optional<String> result = gitHubClient.getReadmeContent("testuser", "repo1");
 
@@ -150,10 +152,12 @@ public class GitHubClientTest {
     // ---- Task 8: getRepositoryLanguages ----
 
     @Test
+    @SuppressWarnings("unchecked")
     void testGetRepositoryLanguages_ShouldReturnLanguageMap() {
-        String url = "https://api.github.com/repos/testuser/repo1/languages";
         Map<String, Long> mockLanguages = Map.of("Java", 1000L, "HTML", 500L);
-        when(restTemplate.getForObject(url, Map.class)).thenReturn(mockLanguages);
+        ResponseEntity<Map> response = ResponseEntity.ok(mockLanguages);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Map.class)))
+                .thenReturn(response);
 
         Map<String, Long> result = gitHubClient.getRepositoryLanguages("testuser", "repo1");
 
@@ -163,9 +167,9 @@ public class GitHubClientTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testGetRepositoryLanguages_WhenNotFound_ShouldReturnEmpty() {
-        String url = "https://api.github.com/repos/testuser/empty-repo/languages";
-        when(restTemplate.getForObject(url, Map.class))
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Map.class)))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
         Map<String, Long> result = gitHubClient.getRepositoryLanguages("testuser", "empty-repo");
@@ -176,9 +180,11 @@ public class GitHubClientTest {
     // ---- Task 11: checkFileExists ----
 
     @Test
+    @SuppressWarnings("unchecked")
     void testCheckFileExists_WhenFileExists_ShouldReturnTrue() {
-        String url = "https://api.github.com/repos/testuser/repo1/contents/pom.xml";
-        when(restTemplate.getForObject(url, Object.class)).thenReturn(new Object());
+        ResponseEntity<Object> response = ResponseEntity.ok(new Object());
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Object.class)))
+                .thenReturn(response);
 
         boolean exists = gitHubClient.checkFileExists("testuser", "repo1", "pom.xml");
 
@@ -186,14 +192,37 @@ public class GitHubClientTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testCheckFileExists_WhenFileNotFound_ShouldReturnFalse() {
-        String url = "https://api.github.com/repos/testuser/repo1/contents/pom.xml";
-        when(restTemplate.getForObject(url, Object.class))
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Object.class)))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
         boolean exists = gitHubClient.checkFileExists("testuser", "repo1", "pom.xml");
 
         assertFalse(exists);
+    }
+
+    // ---- Test Token Authentication ----
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testGetUserRepositories_WithToken_ShouldPassAuthHeader() {
+        gitHubProperties.setToken("test-token-123");
+        gitHubClient = new GitHubClient(restTemplate, gitHubProperties);
+
+        GitHubRepositoryDto[] mockRepos = new GitHubRepositoryDto[1];
+        mockRepos[0] = createMockDto("repo1", "testuser/repo1", "testuser", "First repo", 10, 3, 5, 1000, "Java");
+
+        ResponseEntity<GitHubRepositoryDto[]> response = ResponseEntity.ok(mockRepos);
+        ResponseEntity<GitHubRepositoryDto[]> emptyResponse = ResponseEntity.ok(new GitHubRepositoryDto[0]);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(GitHubRepositoryDto[].class)))
+                .thenReturn(response)
+                .thenReturn(emptyResponse);
+
+        List<RepositoryInfo> repos = gitHubClient.getUserRepositories("testuser");
+
+        assertEquals(1, repos.size());
+        assertEquals("repo1", repos.get(0).getName());
     }
 
     // ---- Helper ----

@@ -1,0 +1,12 @@
+# ============================================
+# Dev Profile: Local development environment
+# ============================================
+
+logging:
+  level:
+    com.repohealth: DEBUG
+    org.springframework.web: INFO
+
+repohealth:
+  data-dir: ${REPOHEALTH_DATA_DIR:./data/dev}
+  log-dir: ${REPOHEALTH_LOG_DIR:${repohealth.data-dir}/logs}

@@ -1,0 +1,12 @@
+# ============================================
+# Prod Profile: Production environment
+# ============================================
+
+logging:
+  level:
+    com.repohealth: WARN
+    org.springframework.web: WARN
+
+repohealth:
+  data-dir: ${REPOHEALTH_DATA_DIR:./data/prod}
+  log-dir: ${REPOHEALTH_LOG_DIR:${repohealth.data-dir}/logs}

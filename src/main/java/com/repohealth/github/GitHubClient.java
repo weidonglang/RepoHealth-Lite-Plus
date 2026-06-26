@@ -1,6 +1,11 @@
 package com.repohealth.github;
 
 import com.repohealth.model.RepositoryInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -17,18 +22,17 @@ import java.util.Optional;
 @Component
 public class GitHubClient {
 
+    private static final Logger log = LoggerFactory.getLogger(GitHubClient.class);
     private static final String GITHUB_API_BASE = "https://api.github.com";
     private static final int PER_PAGE = 100;
     private static final int MAX_PAGES = 10;
 
     private final RestTemplate restTemplate;
+    private final GitHubProperties gitHubProperties;
 
-    public GitHubClient() {
-        this.restTemplate = new RestTemplate();
-    }
-
-    public GitHubClient(RestTemplate restTemplate) {
+    public GitHubClient(RestTemplate restTemplate, GitHubProperties gitHubProperties) {
         this.restTemplate = restTemplate;
+        this.gitHubProperties = gitHubProperties;
     }
 
     /**
@@ -45,7 +49,8 @@ public class GitHubClient {
                     .toUriString();
 
             try {
-                GitHubRepositoryDto[] repos = restTemplate.getForObject(url, GitHubRepositoryDto[].class);
+                HttpEntity<Void> entity = createAuthEntity();
+                GitHubRepositoryDto[] repos = restTemplate.exchange(url, HttpMethod.GET, entity, GitHubRepositoryDto[].class).getBody();
                 if (repos == null || repos.length == 0) {
                     break;
                 }
@@ -82,7 +87,8 @@ public class GitHubClient {
                     .toUriString();
 
             try {
-                GitHubContentDto contentDto = restTemplate.getForObject(resolvedUrl, GitHubContentDto.class);
+                HttpEntity<Void> entity = createAuthEntity();
+                GitHubContentDto contentDto = restTemplate.exchange(resolvedUrl, HttpMethod.GET, entity, GitHubContentDto.class).getBody();
                 if (contentDto != null && contentDto.getContent() != null) {
                     String decoded = new String(java.util.Base64.getDecoder().decode(contentDto.getContent().replaceAll("\\s", "")));
                     return Optional.of(decoded);
@@ -110,7 +116,8 @@ public class GitHubClient {
                 .toUriString();
 
         try {
-            return restTemplate.getForObject(resolvedUrl, Map.class);
+            HttpEntity<Void> entity = createAuthEntity();
+            return restTemplate.exchange(resolvedUrl, HttpMethod.GET, entity, Map.class).getBody();
         } catch (Exception e) {
             return Collections.emptyMap();
         }
@@ -126,16 +133,27 @@ public class GitHubClient {
                 .toUriString();
 
         try {
-            restTemplate.getForObject(resolvedUrl, Object.class);
+            HttpEntity<Void> entity = createAuthEntity();
+            restTemplate.exchange(resolvedUrl, HttpMethod.GET, entity, Object.class);
             return true;
         } catch (HttpClientErrorException e) {
-            if (e.getStatusCode().value() == 404) {
-                return false;
-            }
             return false;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * 创建带有 Authorization header 的 HttpEntity（如果配置了 Token）。
+     */
+    private HttpEntity<Void> createAuthEntity() {
+        HttpHeaders headers = new HttpHeaders();
+        String token = gitHubProperties.getToken();
+        if (token != null && !token.isBlank()) {
+            headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+            log.debug("Using GitHub Token for authentication");
+        }
+        return new HttpEntity<>(headers);
     }
 
     private RepositoryInfo mapToRepositoryInfo(GitHubRepositoryDto dto) {

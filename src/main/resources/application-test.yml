@@ -1,0 +1,17 @@
+# ============================================
+# Test Profile: Unit / integration testing
+# ============================================
+
+logging:
+  level:
+    com.repohealth: WARN
+    org.springframework.web: WARN
+
+repohealth:
+  github:
+    token: ""
+    api-base-url: https://api.github.com
+    request-timeout-seconds: 5
+
+  cache:
+    ttl-minutes: 1
